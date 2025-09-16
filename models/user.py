@@ -18,6 +18,7 @@ class UserModel(BaseModel):
     name = Column(String, unique=True)
     email= Column(String, unique=True)
     password_hash = Column(String, nullable=True) 
+    country_code = Column(String(10), default="+973")   
     phone = Column(String(20))
     address = Column(Text)
     is_active = Column(Boolean, default=True, index=True) 
