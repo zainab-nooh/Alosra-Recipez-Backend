@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, 
 from sqlalchemy.orm import Session
 from typing import List
 from models.user import UserModel
-from serializers.user_serializers import UserSchema, UserToken, UserLogin, UserResponseSchema
+from serializers.user_serializers import UserSchema, UserToken, UserLogin, UserResponseSchema, UserUpdateSchema
 from database import get_db
+import jwt
+from config.enviroment import settings
 
 router = APIRouter()
 
@@ -31,8 +33,8 @@ def create_user(user: UserSchema, db: Session = Depends(get_db)):
 @router.post("/login", response_model=UserToken)
 def login(user: UserLogin, db: Session = Depends(get_db)):
 
-    # Find the user by username
-    db_user = db.query(UserModel).filter(UserModel.username == user.email).first()
+    # Find the user by email
+    db_user = db.query(UserModel).filter(UserModel.email == user.email).first()
 
     # Check if the user exists and if the password is correct
     if not db_user or not db_user.verify_password(user.password):
@@ -55,3 +57,52 @@ def get_single_user(user_id: int, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+
+
+
+def get_current_user(token: str, db: Session = Depends(get_db)):
+    """Get the current user from JWT token"""
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        user_id = int(payload.get("sub"))
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.get("/me", response_model=UserResponseSchema)
+def get_current_user_profile(current_user: UserModel = Depends(get_current_user)):
+    """Get current authenticated user's profile"""
+    return current_user
+
+
+
+@router.put("/profile", response_model=UserResponseSchema)
+def update_user_profile(
+    user_update: UserUpdateSchema,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's profile"""
+    if user_update.name is not None:
+        current_user.name = user_update.name
+    if user_update.phone is not None:
+        current_user.phone = user_update.phone
+    if user_update.address is not None:
+        current_user.address = user_update.address
+    if user_update.country_code is not None:
+        current_user.country_code = user_update.country_code
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
