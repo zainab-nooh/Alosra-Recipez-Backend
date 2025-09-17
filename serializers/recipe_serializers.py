@@ -45,5 +45,5 @@ class RecipeWithPricing(RecipeResponseSchema):
     calculated_price: Optional[Decimal] = None
 
 # Forward reference
-from .categoy_serializers import CategoryResponseSchema
+from .category_serializers import CategoryResponseSchema
 RecipeResponseSchema.model_rebuild()
