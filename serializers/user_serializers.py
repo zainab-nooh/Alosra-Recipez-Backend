@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 # User Registartion/Creation
-class UserScheme(BaseModel):
+class UserSchema(BaseModel):
     name: str # User's Full anme
     email: str #User's email
     password: str
@@ -44,7 +44,7 @@ class UserUpdateSchema(BaseModel):
         orm_mode = True 
 
 # User Login
-class Userlogin(BaseModel):
+class UserLogin(BaseModel):
     email: str
     password: str
 

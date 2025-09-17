@@ -4,7 +4,7 @@ from .base import BaseModel
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 import jwt 
-from config.enviroment import secret
+from config.enviroment import settings 
 
 
 # Creating a password hashing context using bcrypt
@@ -48,6 +48,6 @@ class UserModel(BaseModel):
         }
 
         # create JWT Token 
-        token  = jwt.encode(payload, secret, algorithm="HS256")
+        token = jwt.encode(payload, settings.secret_key, algorithm="HS256")
         return token
     
