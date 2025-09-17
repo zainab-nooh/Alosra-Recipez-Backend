@@ -14,7 +14,7 @@ class CartItem(BaseModel):
 
     # Relationships
 
-    user = relationship("User", back_populates="cart_items")
+    user = relationship("UserModel", back_populates="cart_items")
     recipe = relationship("Recipe", back_populates="cart_items")
 
 
