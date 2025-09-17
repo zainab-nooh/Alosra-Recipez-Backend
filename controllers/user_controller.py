@@ -7,7 +7,7 @@ from database import get_db
 import jwt
 from config.enviroment import settings
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
 @router.post("/register", response_model=UserResponseSchema)

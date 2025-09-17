@@ -58,43 +58,39 @@ The traditional grocery shopping experience for cooking specific dishes involves
 ```
 alosra-recipez-backend/
 ├── config/
-│   ├── database.py          # Database configuration
-│   └── settings.py          # Application settings
+│   └── enviroment.py        # Environment configuration & settings
 ├── controllers/
-│   ├── auth_controller.py   # Authentication endpoints
-│   ├── category_controller.py # Category management
+│   ├── cart_controller.py   # Cart management endpoints
+│   ├── category_controller.py # Category management endpoints
+│   ├── order_controller.py  # Order processing endpoints
 │   ├── recipe_controller.py # Recipe endpoints
-│   ├── cart_controller.py   # Cart management
-│   └── order_controller.py  # Order processing
-├── models/
-│   ├── user.py             # User database model
-│   ├── category.py         # Category model
-│   ├── recipe.py           # Recipe model
-│   ├── order.py            # Order & OrderItem models
-│   └── cart.py             # Cart model
-├── serializers/
-│   ├── user_serializers.py # User request/response schemas
-│   ├── category_serializers.py
-│   ├── recipe_serializers.py
-│   ├── cart_serializers.py
-│   └── order_serializers.py
+│   └── user_controller.py   # User management endpoints
 ├── dependencies/
-│   ├── auth.py             # Authentication dependencies
-│   └── database.py         # Database session management
+│   └── auth.py             # Authentication dependencies
+├── models/
+│   ├── base.py             # Base model with common fields
+│   ├── cart.py             # Cart model
+│   ├── category.py         # Category model
+│   ├── order.py            # Order & OrderItem models
+│   ├── recipe.py           # Recipe model
+│   └── user.py             # User database model
+├── serializers/
+│   ├── cart_serializers.py # Cart request/response schemas
+│   ├── category_serializers.py # Category schemas
+│   ├── order_serializers.py # Order schemas
+│   ├── recipe_serializers.py # Recipe schemas
+│   └── user_serializers.py # User schemas
 ├── utils/
-│   ├── security.py         # Security utilities
-│   └── helpers.py          # Helper functions
-├── tests/
-│   ├── test_auth.py        # Authentication tests
-│   ├── test_recipes.py     # Recipe endpoint tests
-│   └── test_orders.py      # Order processing tests
-├── main.py                 # FastAPI application entry point
-├── database.py             # Database initialization
-├── seed.py                 # Sample data seeding
-├── requirements.txt        # Python dependencies
-├── .env.example            # Environment variables template
-├── render.yaml              # Render deployment configuration
-└── README.md              # This file
+│   └── security.py         # Security utilities & password hashing
+├── .env                    # Environment variables (not in git)
+├── .gitignore             # Git ignore file
+├── database.py            # Database initialization & session management
+├── main.py                # FastAPI application entry point
+├── Pipfile                # Pipenv dependency file
+├── Pipfile.lock           # Locked dependency versions
+├── README.md              # This file
+├── requirements.txt       # Python dependencies
+└── seed.py                # Sample data seeding script
 ```
 
 ## ⚙️ Installation & Setup
@@ -173,31 +169,35 @@ The API will be available at:
 ## 🔌 API Endpoints
 
 ### Authentication
-- `POST /api/v1/auth/register` - User registration
-- `POST /api/v1/auth/login` - User login
-- `GET /api/v1/auth/me` - Get current user profile
-- `PUT /api/v1/auth/profile` - Update user profile
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User login
+- `GET /users/me` - Get current user profile
+- `PUT /users/profile` - Update user profile
 
 ### Categories & Recipes
-- `GET /api/v1/categories` - List all categories
-- `GET /api/v1/categories/{category_id}/recipes` - Get recipes by category
-- `GET /api/v1/recipes/{recipe_id}` - Get recipe details
+- `GET /categories` - List all categories
+- `GET /categories/{category_id}` - Get category details
+- `GET /categories/{category_id}/recipes` - Get recipes by category
+- `GET /recipes` - List all recipes with optional filtering
+- `GET /recipes/{recipe_id}` - Get recipe details
 
 ### Cart Management
-- `GET /api/v1/cart` - Get user's cart
-- `POST /api/v1/cart/add` - Add item to cart
-- `PUT /api/v1/cart/item/{item_id}` - Update cart item
-- `DELETE /api/v1/cart/item/{item_id}` - Remove cart item
+- `GET /cart` - Get user's cart
+- `POST /cart/add` - Add item to cart
+- `PUT /cart/item/{item_id}` - Update cart item quantity
+- `DELETE /cart/item/{item_id}` - Remove cart item
+- `DELETE /cart/clear` - Clear entire cart
 
 ### Order Processing
-- `POST /api/v1/orders` - Create new order
-- `GET /api/v1/orders` - Get user's order history
-- `GET /api/v1/orders/{order_id}` - Get order details
+- `POST /orders` - Create new order from cart
+- `GET /orders` - Get user's order history
+- `GET /orders/{order_id}` - Get order details
+- `PUT /orders/{order_id}/status` - Update order status
 
 ### Example API Usage
 ```bash
 # Register new user
-curl -X POST "http://localhost:8000/api/v1/auth/register" \
+curl -X POST "http://localhost:8000/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Ahmed Al-Mansoori",
@@ -207,27 +207,49 @@ curl -X POST "http://localhost:8000/api/v1/auth/register" \
     "address": "Manama, Bahrain"
   }'
 
-# Get recipes in Arabic cuisine category
-curl -X GET "http://localhost:8000/api/v1/categories/1/recipes" \
+# Get all categories
+curl -X GET "http://localhost:8000/categories" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Add recipe to cart
+curl -X POST "http://localhost:8000/cart/add" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "recipe_id": 1,
+    "number_of_people": 4
+  }'
 ```
 
 ## 🗄️ Database Schema
 
 ### Key Entities
-- **Users**: Customer accounts with authentication
-- **Categories**: Recipe categories (Arabic, Asian, Italian, Healthy)
-- **Recipes**: Individual recipes with pricing and details
-- **Orders**: Customer orders with delivery information
-- **Order Items**: Individual recipes within orders
-- **Cart Items**: Temporary shopping cart storage
+- **Users**: Customer accounts with authentication and profile information
+- **Categories**: Recipe categories (Arabic, Asian, Italian, Healthy Options)
+- **Recipes**: Individual recipes with pricing, difficulty, and preparation details
+- **Orders**: Customer orders with delivery information and status tracking
+- **Order Items**: Individual recipes within orders with quantities and pricing
+- **Cart Items**: Temporary shopping cart storage with user-specific items
+
+### Base Model Features
+All models inherit from `BaseModel` which provides:
+- `id`: Primary key (auto-incrementing integer)
+- `created_at`: Timestamp when record was created
+- `updated_at`: Timestamp when record was last modified
 
 ### Relationships
 - Users → Orders (1:N)
+- Users → Cart Items (1:N)
 - Categories → Recipes (1:N)
 - Recipes → Order Items (1:N)
+- Recipes → Cart Items (1:N)
 - Orders → Order Items (1:N)
-- Users → Cart Items (1:N)
+
+### Key Features
+- **Unique Constraints**: Cart items are unique per user-recipe combination
+- **Cascade Deletes**: User deletion removes associated orders and cart items
+- **Price Calculations**: Dynamic pricing based on number of people served
+- **Order Status Tracking**: Pending → Confirmed → Preparing → Out for Delivery → Delivered
 
 ## 🧪 Testing
 
@@ -302,7 +324,7 @@ PYTHON_VERSION=3.9.16
 
 ### Database Migration on Render
 ```bash
-# After deployment, run database setup via Render Shell or manually:
+# After deployment, run database setup via Render Shell:
 # 1. Go to your web service dashboard
 # 2. Click "Shell" tab
 # 3. Run migration commands:
@@ -317,11 +339,13 @@ python seed.py
 - Foreign key indexes on all relationship columns
 - Composite indexes on frequently queried combinations
 - Database connection pooling for production
+- Lazy loading with `joinedload` for related data
 
 ### API Performance
-- Lazy loading for related data to avoid N+1 queries
-- Response caching for category and recipe data
-- Request/response compression
+- Efficient SQLAlchemy queries with proper joins
+- Response serialization with Pydantic
+- Request/response validation and error handling
+- Optimized cart and order calculations
 
 ### Monitoring (Production)
 - Application logs with structured logging
@@ -331,12 +355,13 @@ python seed.py
 
 ## 🔒 Security Features
 
-- **JWT Authentication** with configurable expiration
-- **Password Hashing** using bcrypt with salt
-- **Input Validation** with Pydantic schemas
+- **JWT Authentication** with configurable expiration times
+- **Password Hashing** using bcrypt with salt via Passlib
+- **Input Validation** with comprehensive Pydantic schemas
 - **SQL Injection Protection** through SQLAlchemy ORM
-- **CORS Configuration** for mobile app access
-- **Rate Limiting** (planned for production)
+- **CORS Configuration** for secure mobile app access
+- **User Authorization** ensuring users can only access their own data
+- **Secure Password Requirements** and validation
 
 ## 🤝 Contributing
 
@@ -353,30 +378,35 @@ python seed.py
 - Add type hints to all function signatures
 - Write unit tests for new features
 - Update documentation for API changes
+- Use meaningful variable and function names
 
 ## 📝 Next Steps
 
 ### Planned Enhancements
-- **Real-time Order Tracking**: WebSocket integration for live order status
+- **Real-time Order Tracking**: WebSocket integration for live order status updates
 - **Payment Gateway Integration**: Stripe or local Bahraini payment processors
-- **Recipe Recommendations**: ML-based personalized suggestions
-- **Inventory Management**: Real-time ingredient availability
+- **Recipe Recommendations**: ML-based personalized recipe suggestions
+- **Inventory Management**: Real-time ingredient availability checking
 - **Admin Dashboard**: Recipe and order management interface
 - **Notification System**: Email/SMS notifications for order updates
 - **Multi-language Support**: Arabic language interface
 - **Advanced Search**: Full-text search with filters and sorting
+- **Recipe Ratings & Reviews**: Customer feedback system
+- **Nutritional Information**: Detailed nutritional data for recipes
 
 ### Performance Improvements
 - Redis caching for frequently accessed data
-- Database query optimization and indexing
+- Database query optimization and advanced indexing
 - Background task processing for order workflows
 - API response compression and CDN integration
+- Database connection pooling optimization
 
 ### Security Enhancements
 - API rate limiting and throttling
 - Enhanced input validation and sanitization
 - Audit logging for all data modifications
 - Two-factor authentication support
+- Role-based access control (RBAC)
 
 ## 📞 Support & Contact
 
@@ -390,15 +420,20 @@ python seed.py
 - **ERD**: [Alosra-Recipez-ERD](https://drive.google.com/file/d/1xK3a63Aosz0zBxTmPSNfPNyck5wx8n9E/view?usp=sharing)
 - **Wireframe**: [Alosra-Recipez-Wireframe](https://excalidraw.com/#json=lpgfANaD60Ycjg9txNL5N,nmz9QW7U0urdnvqE_XcA8A)
 
-
-
 ### Issues & Bug Reports
 - **GitHub Issues**: [Create Issue](https://github.com/zainab-nooh/Alosra-Recipez-Backend/issues)
 - **Documentation**: Available in `/docs` endpoint when running
 - **API Testing**: Use interactive docs at `/docs` for testing endpoints
 
 ### Business Context
-This API was developed as part of a full-stack web development project, focusing on solving real-world problems in the Bahraini food delivery market by partnering with local supermarkets to provide pre-measured cooking ingredients.
+This API was developed as part of a full-stack web development project, focusing on solving real-world problems in the Bahraini food delivery market by partnering with local supermarkets to provide pre-measured cooking ingredients with step-by-step cooking guidance.
+
+### Mobile App Integration
+This backend is specifically designed to work seamlessly with React Native/Expo frontend applications, providing:
+- RESTful API endpoints optimized for mobile consumption
+- JWT-based authentication suitable for mobile token storage
+- JSON responses optimized for mobile data usage
+- CORS configuration for cross-platform mobile development
 
 ---
 

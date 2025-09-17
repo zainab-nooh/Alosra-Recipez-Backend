@@ -32,7 +32,7 @@ class OrderItemCreate(BaseModel):
 class OrderCreate(BaseModel):
     delivery_address: str
     delivery_phone: str
-    specila_notes: Optional[str] = None
+    special_notes: Optional[str] = None
     items: List[OrderItemCreate]
 
     @field_validator("items")
@@ -54,6 +54,7 @@ class OrderItemResponseSchema(BaseModel):
 
     class Config:
         orm_mode = True
+        
 
 
 # Response Schema for orders

@@ -8,9 +8,19 @@ from models.cart import CartItem
 from models.recipe import Recipe
 from models.user import UserModel
 from serializers.cart_serializers import CartItemCreate, CartItemUpdate, CartItemResponseSchema, CartResponseSchema
-# from dependencies.auth import get_current_user
-# will see if to add it or not 
+from dependencies.auth import get_current_user
+
 router = APIRouter(prefix="/cart", tags=["cart"])
+
+def _create_cart_item_response(cart_item: CartItem) -> CartItemResponseSchema:
+    """Helper function to create cart item response with calculated price"""
+    calculated_price = cart_item.recipe.base_price * Decimal(cart_item.number_of_people)
+    
+    # Create response and set calculated price
+    response = CartItemResponseSchema.model_validate(cart_item)
+    response.calculated_price = calculated_price
+    
+    return response
 
 @router.get("/", response_model=CartResponseSchema)
 def get_user_cart(
@@ -28,13 +38,9 @@ def get_user_cart(
     cart_item_responses = []
     
     for cart_item in cart_items:
-        calculated_price = cart_item.recipe.base_price * Decimal(cart_item.number_of_people)
-        total_amount += calculated_price
-        
-        # Create response with calculated price
-        cart_item_dict = CartItemResponseSchema.model_validate(cart_item).model_dump()
-        cart_item_dict['calculated_price'] = calculated_price
-        cart_item_responses.append(CartItemResponseSchema(**cart_item_dict))
+        cart_response = _create_cart_item_response(cart_item)
+        total_amount += cart_response.calculated_price
+        cart_item_responses.append(cart_response)
     
     return CartResponseSchema(
         items=cart_item_responses,
@@ -72,7 +78,6 @@ def add_item_to_cart(
         # Update existing item
         existing_cart_item.number_of_people = cart_item_data.number_of_people
         db.commit()
-        db.refresh(existing_cart_item)
         cart_item = existing_cart_item
     else:
         # Create new cart item
@@ -93,19 +98,12 @@ def add_item_to_cart(
                 detail="Error adding item to cart"
             )
     
-    # Load recipe and category for response
-    db.refresh(cart_item)
+    # Load with relationships for response
     cart_item_with_recipe = db.query(CartItem).options(
         joinedload(CartItem.recipe).joinedload(Recipe.category)
     ).filter(CartItem.id == cart_item.id).first()
     
-    # Calculate price and return response
-    calculated_price = cart_item_with_recipe.recipe.base_price * Decimal(cart_item_with_recipe.number_of_people)
-    
-    cart_item_dict = CartItemResponseSchema.model_validate(cart_item_with_recipe).model_dump()
-    cart_item_dict['calculated_price'] = calculated_price
-    
-    return CartItemResponseSchema(**cart_item_dict)
+    return _create_cart_item_response(cart_item_with_recipe)
 
 @router.put("/item/{cart_item_id}", response_model=CartItemResponseSchema)
 def update_cart_item(
@@ -129,17 +127,12 @@ def update_cart_item(
             detail="Cart item not found"
         )
     
+    # Update the item
     cart_item.number_of_people = cart_item_update.number_of_people
     db.commit()
     db.refresh(cart_item)
     
-    # Calculate price and return response
-    calculated_price = cart_item.recipe.base_price * Decimal(cart_item.number_of_people)
-    
-    cart_item_dict = CartItemResponseSchema.model_validate(cart_item).model_dump()
-    cart_item_dict['calculated_price'] = calculated_price
-    
-    return CartItemResponseSchema(**cart_item_dict)
+    return _create_cart_item_response(cart_item)
 
 @router.delete("/item/{cart_item_id}")
 def remove_cart_item(
@@ -172,7 +165,7 @@ def clear_cart(
 ):
     """Clear all items from user's cart"""
     
-    db.query(CartItem).filter(CartItem.user_id == current_user.id).delete()
+    deleted_count = db.query(CartItem).filter(CartItem.user_id == current_user.id).delete()
     db.commit()
     
-    return {"message": "Cart cleared successfully"}
+    return {"message": f"Cart cleared successfully. {deleted_count} items removed."}
