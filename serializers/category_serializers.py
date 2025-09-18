@@ -8,17 +8,19 @@ class CategoryBase(BaseModel):
     image_url: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CategoryResponseSchema(BaseModel):
     id: int
+    name: str
+    description: Optional[str] = None
+    image_url: str
     is_active: bool
     display_order: int 
     created_at: datetime
 
-
     class Config: 
-        orm_mode = True
+        from_attributes = True
 
 
 class CategoryWithRecipes(CategoryResponseSchema):

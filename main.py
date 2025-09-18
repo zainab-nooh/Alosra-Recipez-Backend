@@ -5,13 +5,15 @@ from controllers.category_controller import router as CategoryRouter
 from controllers.recipe_controller import router as RecipeRouter
 from controllers.cart_controller import router as CartRouter
 from controllers.order_controller import router as OrderRouter
+import uvicorn
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        'http://127.0.0.1:8000',
+        'http://localhost:5173',
+        'http://localhost:8081',
         'http://localhost:19006',  # Expo web
         'http://127.0.0.1:19006',  # Expo web alternative
         'http://localhost:3000',   # React dev server
@@ -31,3 +33,6 @@ app.include_router(OrderRouter, prefix='/api')
 @app.get('/')
 def home():
     return {'message': 'Welcome to Alosra Recipe Kit API'}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

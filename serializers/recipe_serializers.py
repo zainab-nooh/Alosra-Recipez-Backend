@@ -38,7 +38,7 @@ class RecipeResponseSchema(RecipeBase):
     category: Optional["CategoryResponseSchema"] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Extended response schema with calculated price
 class RecipeWithPricing(RecipeResponseSchema):

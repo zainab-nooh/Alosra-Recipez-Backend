@@ -5,6 +5,10 @@ from models.user import UserModel
 from models.category import Category
 from models.recipe import Recipe
 from utils.security import hash_password
+from database import get_db
+from models.base import Base
+
+from models import UserModel, Category, Recipe, Order, OrderItem, CartItem
 
 # Create session
 SessionLocal = sessionmaker(bind=engine)

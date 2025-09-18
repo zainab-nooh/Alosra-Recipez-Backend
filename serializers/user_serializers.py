@@ -13,7 +13,7 @@ class UserSchema(BaseModel):
     address: Optional[str] = None
 
     class Config:
-        orm_mode = True 
+        from_attributes = True 
 
 
 # Returning User Data
@@ -28,7 +28,7 @@ class UserResponseSchema(BaseModel):
 
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 
@@ -41,7 +41,7 @@ class UserUpdateSchema(BaseModel):
     address: Optional[str] = None
 
     class Config:
-        orm_mode = True 
+        from_attributes = True 
 
 # User Login
 class UserLogin(BaseModel):
@@ -57,4 +57,4 @@ class UserToken(BaseModel):
 
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -53,7 +53,7 @@ class OrderItemResponseSchema(BaseModel):
     recipe: "RecipeResponseSchema"
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         
 
 
@@ -73,7 +73,7 @@ class OrderResponseSchema(BaseModel):
 
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Schema for returning Summarized orders 
@@ -85,7 +85,7 @@ class OrderSummarySchema(BaseModel):
     items_count: int 
 
     class Config: 
-        orm_mode = True
+        from_attributes = True
 
 
 from .recipe_serializers import RecipeResponseSchema
