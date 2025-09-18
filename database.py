@@ -4,8 +4,8 @@ from config.enviroment import settings
 from models.base import Base
 
 
-DATABASE_URL = settings.db_uri
-SECRET_KEY = settings.secret_key
+DATABASE_URL = settings.DATABASE_URL
+SECRET_KEY = settings.SECRET_KEY
 
 
 
