@@ -7,7 +7,7 @@ from database import get_db
 from dependencies.auth import get_current_user
 from config.enviroment import settings
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponseSchema)

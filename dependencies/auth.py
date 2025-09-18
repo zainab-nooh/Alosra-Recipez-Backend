@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import UserModel
-# from utils.security import verify_token
+from utils.security import verify_token
 
 security = HTTPBearer()
 
@@ -22,7 +22,7 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if not user.is_active:
+    if not user['is_active']:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
@@ -31,6 +31,6 @@ def get_current_user(
     return user
 
 def get_current_active_user(current_user: UserModel = Depends(get_current_user)) -> UserModel:
-    if not current_user.is_active:
+    if not current_user['is_active']:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user

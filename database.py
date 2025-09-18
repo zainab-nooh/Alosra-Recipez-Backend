@@ -4,14 +4,14 @@ from config.enviroment import settings
 from models.base import Base
 
 
-DATABASE_URL = settings.DATABASE_URL
+DB_URI = settings.DB_URI
 SECRET_KEY = settings.SECRET_KEY
 
 
 
 
 engine = create_engine(
-    DATABASE_URL
+    DB_URI
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
