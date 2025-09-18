@@ -4,7 +4,7 @@ from typing import List
 from models.user import UserModel
 from serializers.user_serializers import UserSchema, UserToken, UserLogin, UserResponseSchema, UserUpdateSchema
 from database import get_db
-import jwt
+from dependencies.auth import get_current_user
 from config.enviroment import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -14,13 +14,13 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 def create_user(user: UserSchema, db: Session = Depends(get_db)):
     # Check if the username or email already exists
     existing_user = db.query(UserModel).filter(
-        (UserModel.username == user.name) | (UserModel.email == user.email)
+        (UserModel.name == user.name) | (UserModel.email == user.email)
     ).first()
 
     if existing_user:
         raise HTTPException(status_code=400, detail="Username or email already exists")
 
-    new_user = UserModel(username=user.name, email=user.email)
+    new_user = UserModel(name=user.name, email=user.email)
     # Use the set_password method to hash the password
     new_user.set_password(user.password)
     print(new_user)
@@ -42,9 +42,11 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
     # Generate JWT token
     token = db_user.generate_token()
+    user_response = UserResponseSchema.from_orm(db_user)
+
 
     # Return token and a success message
-    return {"token": token, "message": "Login successful"}
+    return {"token": token, "message": "Login successful", "user": user_response}
 
 @router.get('/users', response_model=List[UserResponseSchema])
 def get_users(db: Session=Depends(get_db)):
@@ -60,24 +62,6 @@ def get_single_user(user_id: int, db: Session = Depends(get_db)):
 
 
 
-
-
-def get_current_user(token: str, db: Session = Depends(get_db)):
-    """Get the current user from JWT token"""
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing token")
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
-        user_id = int(payload.get("sub"))
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
 
 
 @router.get("/me", response_model=UserResponseSchema)

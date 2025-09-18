@@ -43,5 +43,5 @@ class UserModel(BaseModel):
         }
 
         # create JWT Token 
-        token = jwt.encode(payload, settings.secret_key, algorithm="HS256")
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         return token
